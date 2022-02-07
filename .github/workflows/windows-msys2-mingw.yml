@@ -1,0 +1,130 @@
+name: Build & test on Windows w. Msys2 + MingW
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 5" # At 00:00 every Friday
+
+jobs:
+  build_and_test_windows_mingw:
+    runs-on: windows-2022
+    env:
+      # Disable progress bar in Cargo. This cuts down on output, avoiding log length limits.
+      TERM: dumb
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rust-version: stable
+            msystem: MINGW64
+            arch: x86_64
+            env:
+              TARGET: x86_64-pc-windows-gnu
+            name: "x86_64, Rust stable"
+          - rust-version: stable
+            msystem: MINGW32
+            arch: i686
+            env:
+              TARGET: i686-pc-windows-gnu
+            name: "i686, Rust stable"
+          - rust-version: stable
+            msystem: MINGW64
+            arch: x86_64
+            env:
+              TARGET: x86_64-pc-windows-gnu
+              GETTEXT_SYSTEM: 1
+            name: "x86_64 with system gettext, Rust stable"
+          - rust-version: stable
+            msystem: MINGW32
+            arch: i686
+            env:
+              TARGET: i686-pc-windows-gnu
+              GETTEXT_SYSTEM: 1
+            name: "i686 with system gettext, Rust stable"
+          - rust-version: stable
+            msystem: MINGW64
+            arch: x86_64
+            env:
+              TARGET: x86_64-pc-windows-gnu
+              GETTEXT_DIR: /mingw64
+            name: "x86_64 with side-built gettext (via GETTEXT_DIR), Rust stable"
+          - rust-version: stable
+            msystem: MINGW64
+            arch: x86_64
+            env:
+              TARGET: x86_64-pc-windows-gnu
+              GETTEXT_BIN_DIR: /mingw64/bin
+              GETTEXT_LIB_DIR: /mingw64/lib
+              GETTEXT_INCLUDE_DIR: /mingw64/include
+            name: "x86_64 with side-built gettext (via GETTEXT_*_DIR), Rust stable"
+          - rust-version: beta
+            msystem: MINGW64
+            arch: x86_64
+            env:
+              TARGET: x86_64-pc-windows-gnu
+            name: "x86_64, Rust beta"
+          - rust-version: nightly
+            msystem: MINGW64
+            arch: x86_64
+            env:
+              TARGET: x86_64-pc-windows-gnu
+            name: "x86_64, Rust nightly"
+
+    name: ci/run.sh on ${{ matrix.name }}
+
+    steps:
+      - name: Install MSys2 and dependencies
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ${{ matrix.msystem }}
+          install: >-
+            git
+            unzip
+            mingw-w64-${{ matrix.arch }}-toolchain
+            mingw-w64-${{ matrix.arch }}-gettext
+
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: ${{ matrix.rust-version }}
+
+        # setup-rust-action turns panic messages in tests into GitHub
+        # annotations. Our test suite is running with --verbose, and prints out
+        # messages even for panics that we do expect. setup-rust-action can't
+        # know about this though, and floods the UI with annotations. This
+        # command disables annotations for tests.
+      - name: Disable GitHub Annotations
+        run: echo '::remove-matcher owner=cargo-test::'
+
+      - name: Add appropriate target to Cargo
+        run: rustup target add ${{ matrix.env.TARGET }}
+        if: ${{ ! matrix.env.NO_ADD }}
+
+      - name: Check out the code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # required for successfully fetching gettext :(
+          submodules: recursive
+
+      - name: Generate lockfile
+        run: cargo generate-lockfile
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v2
+        with:
+          key: ${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/index
+      - run: |
+          chcp 65001 #set code page to utf-8
+          echo ("TARGET=${{ matrix.env.TARGET }}") >> $env:GITHUB_ENV
+          echo ("GETTEXT_SYSTEM=${{ matrix.env.TARGET }}") >> $env:GETTEXT_SYSTEM
+          echo ("GETTEXT_BIN_DIR=${{ matrix.env.GETTEXT_BIN_DIR }}") >> $env:GITHUB_ENV
+          echo ("GETTEXT_LIB_DIR=${{ matrix.env.GETTEXT_LIB_DIR }}") >> $env:GITHUB_ENV
+          echo ("GETTEXT_INCLUDE_DIR=${{ matrix.env.GETTEXT_INCLUDE_DIR }}") >> $env:GITHUB_ENV
+      - name: ./ci/run.sh
+        shell: msys2 {0}
+        run: sh ci/run.sh
