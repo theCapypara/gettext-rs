@@ -3,6 +3,9 @@
 Raw FFI bindings for gettext. Please see
 [documentation](https://docs.rs/gettext-sys) for details.
 
+The "gettext" directory contains the sources of gettext 0.21 from
+https://ftp.gnu.org/pub/gnu/gettext/gettext-0.21.tar.gz.
+
 ## Licensing
 
 On platforms that don't have a native gettext implementation, this crate
@@ -23,7 +26,7 @@ abide by LGPL**. If you don't want or can't do that, there are two ways out:
         `gettext-devel` installed e.g. using:
 
         ```
-        pacman --noconfirm -S base-devel mingw-w64-x86_64-gcc libxml2-devel tar
+        pacman --noconfirm -S base-devel mingw-w64-x86_64-gcc libxml2-devel
         ```
 
     If none of those conditions hold, the crate will proceed to building and
