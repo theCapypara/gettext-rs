@@ -183,7 +183,7 @@ fn main() {
 
     let mut cmd = Command::new("cp");
     cmd.current_dir(&build_dir.join("gettext"))
-        .arg("-r")
+        .arg("-a")
         .arg(&src.join("gettext").join("."))
         .arg(".");
     run(&mut cmd, "cp");
