@@ -83,7 +83,7 @@ jobs:
 
       - name: Update GETTEXT_DIR
         if: ${{ matrix.use_precompiled }}
-        run: echo ("GETTEXT_DIR=${{ env.GITHUB_WORKSPACE }}/gettext") >> $env:GITHUB_ENV
+        run: echo ("GETTEXT_DIR=${{ github.workspace }}/gettext") >> $env:GITHUB_ENV
       ###
 
       - name: Generate lockfile
