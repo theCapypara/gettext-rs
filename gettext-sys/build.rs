@@ -181,17 +181,12 @@ fn main() {
         cflags.push("-DLIBXML_STATIC");
     }
 
-    let mut cmd = Command::new("tar");
+    let mut cmd = Command::new("cp");
     cmd.current_dir(&build_dir.join("gettext"))
-        .arg("xJf")
-        .arg(&src.join("gettext-0.21.tar.xz"))
-        .arg("--strip-components")
-        .arg("1");
-    if host.contains("windows") {
-        // tar confuses local path with a remote resource because of ':'
-        cmd.arg("--force-local");
-    }
-    run(&mut cmd, "tar");
+        .arg("-r")
+        .arg(&src.join("gettext").join("."))
+        .arg(".");
+    run(&mut cmd, "cp");
 
     let mut cmd = Command::new("sh");
     cmd.env("CC", compiler.path())
