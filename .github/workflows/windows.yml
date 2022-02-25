@@ -16,20 +16,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # TODO: Add a build that does NOT rely on the pre-compiled gettext.
         include:
           - rust-version: stable
+            use_precompiled: true
+            bits: "64"
             env:
               TARGET: x86_64-pc-windows-msvc
             name: "x86_64, Rust stable"
           - rust-version: stable
+            use_precompiled: true
+            bits: "32"
             env:
               TARGET: i686-pc-windows-gnu
             name: "i686, Rust stable"
           - rust-version: beta
+            use_precompiled: true
+            bits: "64"
             env:
               TARGET: x86_64-pc-windows-msvc
             name: "x86_64, Rust beta"
           - rust-version: nightly
+            use_precompiled: true
+            bits: "32"
             env:
               TARGET: i686-pc-windows-gnu
             name: "x86_64, Rust nightly"
@@ -58,6 +67,24 @@ jobs:
         with:
           fetch-depth: 0  # required for successfully fetching gettext :(
           submodules: recursive
+
+      ###
+      - name: Download gettext archive
+        if: ${{ matrix.use_precompiled }}
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: https://github.com/mlocati/gettext-iconv-windows/releases/download/v0.21-v1.16/gettext0.21-iconv1.16-static-${{ matrix.bits }}.zip
+          target: gettext/
+
+      - name: Extract gettext
+        if: ${{ matrix.use_precompiled }}
+        run: 7z x gettext0.21-iconv1.16-static-${{ matrix.bits }}.zip
+        working-directory: gettext/
+
+      - name: Update GETTEXT_DIR
+        if: ${{ matrix.use_precompiled }}
+        run: echo ("GETTEXT_DIR=${{ env.GITHUB_WORKSPACE }}/gettext") >> $env:GITHUB_ENV
+      ###
 
       - name: Generate lockfile
         run: cargo generate-lockfile

@@ -85,6 +85,7 @@ jobs:
             unzip
             mingw-w64-${{ matrix.arch }}-toolchain
             mingw-w64-${{ matrix.arch }}-gettext
+            mingw-w64-${{ matrix.arch }}-diffutils
 
       - uses: hecrj/setup-rust-action@v1
         with:
@@ -127,4 +128,4 @@ jobs:
           echo ("GETTEXT_INCLUDE_DIR=${{ matrix.env.GETTEXT_INCLUDE_DIR }}") >> $env:GITHUB_ENV
       - name: ./ci/run.sh
         shell: msys2 {0}
-        run: sh ci/run.sh
+        run: PATH="$PATH:/c/Users/runneradmin/.cargo/bin" sh ci/run.sh
